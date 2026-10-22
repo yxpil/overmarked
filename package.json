@@ -5,12 +5,14 @@
   "type": "module",
   "description": "OVERMARKED — multimodal data annotation workbench (image / text / audio / spatial)",
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=22.6.0"
   },
   "scripts": {
     "start": "node --disable-warning=ExperimentalWarning server/index.js",
     "dev": "node --watch --disable-warning=ExperimentalWarning server/index.js",
-    "test": "node --disable-warning=ExperimentalWarning --test",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/*.test.js\"",
+    "test:api": "node --disable-warning=ExperimentalWarning --test test/api.test.js",
+    "test:e2e": "node --disable-warning=ExperimentalWarning --test test/e2e.browser.test.js",
     "seed:demo": "node --disable-warning=ExperimentalWarning scripts/seed-demo.js"
   },
   "dependencies": {}

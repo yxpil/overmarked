@@ -528,6 +528,11 @@ export function createImageAnnotator(host, { item, schema, data, readOnly = fals
       draw();
       return;
     }
+    if (draft?.type === 'box') {
+      draft.current = clampWorld(world);
+      draw();
+      return;
+    }
     if (!drag) {
       if (tool === 'select' && !readOnly) {
         canvas.style.cursor = spaceDown ? 'grab' : shapeHit(world) ? 'move' : 'default';

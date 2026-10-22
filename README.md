@@ -51,8 +51,8 @@ Node.js + SQLite + 本地文件存储，**零第三方依赖**（仅使用 Node.
 
 ## 环境要求
 
-- **Node.js >= 22.5.0**（依赖内置的 `node:sqlite`，需 `ExperimentalWarning` 已在启动脚本中关闭）
-- 现代浏览器（Chrome / Edge / Firefox / Safari 最近版本）
+- **Node.js >= 22.6.0**（依赖内置的 `node:sqlite`；测试脚本使用 `node --test` 的 glob 匹配，需 22.6.0 以上）
+- 现代浏览器（Chrome / Edge / Firefox / Safari 最近版本）；跑浏览器端 E2E 需要 Chrome 或 Edge
 
 无需 `npm install` —— 项目没有第三方依赖。
 
@@ -190,7 +190,10 @@ OVERMARKED/
 │       ├── views/           # 登录 / 项目列表 / 工作台 / 管理台 / 设置
 │       └── annotators/      # image / text / audio / spatial 四类标注器
 ├── scripts/seed-demo.js     # 演示数据生成器
-├── test/api.test.js         # 端到端接口测试
+├── test/
+│   ├── api.test.js          # 接口集成测试（node:test）
+│   ├── e2e.browser.test.js  # 浏览器端 E2E（Chrome DevTools Protocol）
+│   └── helpers/cdp.js       # 零依赖 CDP 驱动（真实鼠标 / 键盘事件）
 ├── docs/                    # 概要设计 / 详细设计 / 接口规范
 └── data/                    # 运行时数据（数据库、上传文件、初始密码）—— 不纳入版本库
 ```
@@ -263,10 +266,16 @@ data/
 ## 测试
 
 ```bash
-npm test
+npm test          # 接口集成测试 + 浏览器端 E2E
+npm run test:api  # 仅接口集成测试
+npm run test:e2e  # 仅浏览器端 E2E（需要 Chrome / Edge）
 ```
 
-端到端测试基于 `node:test`，跑在真实 HTTP 服务与临时 SQLite 数据目录之上，不使用 Mock。当前 **11 项全部通过**，覆盖：
+当前 **20 项全部通过**（11 项接口集成 + 9 项浏览器端 E2E）。
+
+### 接口集成测试（`test/api.test.js`）
+
+基于 `node:test`，跑在真实 HTTP 服务与临时 SQLite 数据目录之上，不使用 Mock。覆盖：
 
 - 静态页面与健康检查
 - 认证、CSRF、未登录访问控制
@@ -279,6 +288,24 @@ npm test
 - 归档只读、项目删除与文件清理
 - 停用账号吊销会话并禁止登录
 - 审计日志的操作 / 操作者过滤
+
+### 浏览器端 E2E（`test/e2e.browser.test.js`）
+
+通过 **Chrome DevTools Protocol** 驱动无头 Chrome，**零第三方依赖**（不使用 Playwright / Puppeteer）。驱动层 `test/helpers/cdp.js` 派发真实的 `mousePressed` / `mouseMoved` / `mouseReleased` 与键盘事件，走的是与人工操作完全相同的代码路径。
+
+覆盖：
+
+- 登录页错误密码提示 → 正确登录进入项目列表
+- 图片：拖拽画框 → 保存草稿 → 提交复核 → 服务端状态与图元数量核对
+- 质检员复核通过 → 条目状态流转
+- 导出 COCO 与源标注框坐标一致
+- 文本：拖选文本并打标 → 实体入库
+- 音频：波形上拖拽分段 → 区段长度与边界校验
+- 空间：点要素工具落点 → 几何类型与坐标校验
+- 权限边界：标注员读用户列表 → 403；管理控制台无入口
+- 全流程无 JS 异常、无控制台错误
+
+> 浏览器缺席（未安装 Chrome / Edge）时该套件整体跳过，接口测试不受影响。
 
 ---
 
